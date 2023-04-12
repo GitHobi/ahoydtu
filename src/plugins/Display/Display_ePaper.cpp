@@ -17,13 +17,16 @@ SPIClass hspi(HSPI);
 #endif
 
 DisplayEPaper::DisplayEPaper() {
+#ifndef USE_SPI_DISPLAY
     mDisplayRotation = 2;
     mHeadFootPadding = 16;
+#endif
 }
 
 
 //***************************************************************************
 void DisplayEPaper::init(uint8_t type, uint8_t _CS, uint8_t _DC, uint8_t _RST, uint8_t _BUSY, uint8_t _SCK, uint8_t _MOSI, uint32_t *utcTs, const char *version) {
+#ifndef USE_SPI_DISPLAY
     mUtcTs = utcTs;
 
     if (type > 9) {
@@ -55,14 +58,18 @@ void DisplayEPaper::init(uint8_t type, uint8_t _CS, uint8_t _DC, uint8_t _RST, u
         // call the PowerPage to change the PV Power Values
         actualPowerPaged(0, 0, 0, 0);
     }
+#endif
 }
 
 void DisplayEPaper::config(uint8_t rotation) {
+#ifndef USE_SPI_DISPLAY
     mDisplayRotation = rotation;
+#endif
 }
 
 //***************************************************************************
 void DisplayEPaper::fullRefresh() {
+#ifndef USE_SPI_DISPLAY
     // screen complete black
     _display->fillScreen(GxEPD_BLACK);
     while (_display->nextPage())
@@ -72,9 +79,11 @@ void DisplayEPaper::fullRefresh() {
     _display->fillScreen(GxEPD_WHITE);
     while (_display->nextPage())
         ;
+#endif
 }
 //***************************************************************************
 void DisplayEPaper::headlineIP() {
+#ifndef USE_SPI_DISPLAY
     int16_t tbx, tby;
     uint16_t tbw, tbh;
 
@@ -96,9 +105,11 @@ void DisplayEPaper::headlineIP() {
         _display->setCursor(x, (mHeadFootPadding - 2));
         _display->println(_fmtText);
     } while (_display->nextPage());
+#endif
 }
 //***************************************************************************
 void DisplayEPaper::lastUpdatePaged() {
+#ifndef USE_SPI_DISPLAY
     int16_t tbx, tby;
     uint16_t tbw, tbh;
 
@@ -118,9 +129,11 @@ void DisplayEPaper::lastUpdatePaged() {
             _display->println(_fmtText);
         }
     } while (_display->nextPage());
+#endif
 }
 //***************************************************************************
 void DisplayEPaper::actualPowerPaged(float _totalPower, float _totalYieldDay, float _totalYieldTotal, uint8_t _isprod) {
+#ifndef USE_SPI_DISPLAY
     int16_t tbx, tby;
     uint16_t tbw, tbh, x, y;
 
@@ -172,9 +185,11 @@ void DisplayEPaper::actualPowerPaged(float _totalPower, float _totalYieldDay, fl
         _display->println(_fmtText);
 
     } while (_display->nextPage());
+#endif
 }
 //***************************************************************************
 void DisplayEPaper::loop(float totalPower, float totalYieldDay, float totalYieldTotal, uint8_t isprod) {
+#ifndef USE_SPI_DISPLAY
     // check if the IP has changed
     if (_settedIP != WiFi.localIP().toString().c_str()) {
         // save the new IP and call the Headline Funktion to adapt the Headline
@@ -192,6 +207,7 @@ void DisplayEPaper::loop(float totalPower, float totalYieldDay, float totalYield
     }
 
     _display->powerOff();
+#endif
 }
 //***************************************************************************
 #endif // ESP32

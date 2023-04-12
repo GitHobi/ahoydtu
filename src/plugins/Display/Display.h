@@ -8,6 +8,7 @@
 #include "../../utils/helper.h"
 #include "Display_Mono.h"
 #include "Display_ePaper.h"
+#include "Display_SPI.h"
 
 template <class HMSYSTEM>
 class Display {
@@ -22,8 +23,24 @@ class Display {
             mLoopCnt = 0;
             mVersion = version;
 
+            DPRINTLN(DBG_DEBUG, F("Setting up display"));
+            DBGPRINTLN("Display Type " + String(mCfg->type));
+            DBGPRINTLN("Display Rot  " + String(mCfg->rot));
+            DBGPRINTLN("Display CS   " + String(mCfg->disp_cs));
+            DBGPRINTLN("Display DC   " + String(mCfg->disp_dc));
+            DBGPRINTLN("Display CLK  " + String(mCfg->disp_clk));
+            DBGPRINTLN("Display DATA " + String(mCfg->disp_data));
+
+
             if (mCfg->type == 0)
                 return;
+
+            if (mCfg->type == 20) {
+                mSPIDisplay.config(mCfg->pwrSaveAtIvOffline, mCfg->pxShift, mCfg->contrast);
+                mSPIDisplay.init(mCfg->type, mCfg->rot, mCfg->disp_cs, mCfg->disp_dc, 0xff, mCfg->disp_clk, mCfg->disp_data, mUtcTs, mVersion);
+                return;
+            }
+
 
             if ((0 < mCfg->type) && (mCfg->type < 10)) {
                 mMono.config(mCfg->pwrSaveAtIvOffline, mCfg->pxShift, mCfg->contrast);
@@ -43,6 +60,9 @@ class Display {
 
         void tickerSecond() {
             mMono.loop();
+            if ( mCfg->type == 20 ) {
+                mSPIDisplay.loop();
+            }
             if (mNewPayload || ((++mLoopCnt % 10) == 0)) {
                 mNewPayload = false;
                 mLoopCnt = 0;
@@ -79,6 +99,12 @@ class Display {
                 totalYieldTotal += iv->getChannelFieldValue(CH0, FLD_YT, rec);
             }
 
+            if ( 20 == mCfg->type ) {
+                mSPIDisplay.disp(totalPower, totalYieldDay, totalYieldTotal, isprod);
+            } else {
+
+
+
             if ((0 < mCfg->type) && (mCfg->type < 10)) {
                 mMono.disp(totalPower, totalYieldDay, totalYieldTotal, isprod);
             } else if (mCfg->type >= 10) {
@@ -94,6 +120,8 @@ class Display {
                 mRefreshCycle = 0;
             }
             #endif
+
+            }
         }
 
         // private member variables
@@ -109,6 +137,7 @@ class Display {
         DisplayEPaper mEpaper;
         #endif
         DisplayMono mMono;
+        DisplaySPI mSPIDisplay;
 };
 
 #endif /*__DISPLAY__*/
