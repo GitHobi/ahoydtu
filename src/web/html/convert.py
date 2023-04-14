@@ -6,6 +6,7 @@ import shutil
 from datetime import date
 from pathlib import Path
 import subprocess
+import requests
 
 
 def get_git_sha():
@@ -78,6 +79,15 @@ def convert2Header(inFile, version):
     else:
         outName = "h/" + inFileVarName + ".h"
 
+    #print ( "Src " + inFile + " dst " + outName)
+    #if os.path.isfile(inFile):
+    #    print ( os.path.getmtime(inFile))
+    #if os.path.isfile(outName):
+    #    print ( os.path.getmtime(outName))
+    if os.path.isfile(outName) and os.path.getmtime(outName) > os.path.getmtime(inFile):
+        #print ("nothing to do!")
+        return
+
     data = ""
     if fileType == "ico":
         f = open(inFile, "rb")
@@ -90,6 +100,22 @@ def convert2Header(inFile, version):
             f = open(inFile, "r")
             data = f.read()
             f.close()
+
+    if fileType == "html" or fileType == "css":
+        print ("minifying file: " +inFile)
+        r = requests.post('https://www.toptal.com/developers/html-minifier/raw', data={'input': data})
+        if r.status_code == 200:
+            data = r.text
+        else:
+            print ("issue minifying file: " +inFile)
+
+    if fileType == "js":
+        print ("minifying file: " +inFile)
+        r = requests.post('https://www.toptal.com/developers/javascript-minifier/raw', data={'input': data})
+        if r.status_code == 200:
+            data = r.text
+        else:
+            print ("issue minifying file: " +inFile)
 
     if fileType == "css":
         data = data.replace('\n', '')
@@ -122,9 +148,9 @@ wd = 'h'
 if os.getcwd()[-4:] != "html":
     wd = "web/html/" + wd
 
-if os.path.exists(wd):
-    for f in os.listdir(wd):
-        os.remove(os.path.join(wd, f))
+#if os.path.exists(wd):
+#    for f in os.listdir(wd):
+#        os.remove(os.path.join(wd, f))
 wd += "/tmp"
 if os.path.exists(wd):
     for f in os.listdir(wd):
