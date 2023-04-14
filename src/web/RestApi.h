@@ -415,6 +415,40 @@ class RestApi {
             ah::ip2Char(mConfig->sys.ip.gateway, buf); obj[F("gateway")] = String(buf);
         }
 
+        void getOptions(JsonObject obj) {
+        //    getDisplay(obj.createNestedObject(F("display")));
+            //JsonObject array = obj.createNestedObject("0");
+
+            JsonArray inv = obj.createNestedArray(F("dspOptions"));
+            JsonArray o;
+#ifndef USE_SPI_DISPLAY
+            o = inv.createNestedArray();
+            o.add ( 0 );
+            o.add ( F("none"));
+
+            o = inv.createNestedArray();
+            o.add ( 1 );
+            o.add ( F("SSD1306 0.96\""));
+
+            o = inv.createNestedArray();
+            o.add ( 2 );
+            o.add ( F("SH1106 1.3\""));
+
+            o = inv.createNestedArray();
+            o.add ( 3 );
+            o.add ( F("Nokia5110"));
+
+            o = inv.createNestedArray();
+            o.add ( 10 );
+            o.add ( F("ePaper"));
+#endif
+            o = inv.createNestedArray();
+            o.add ( 20 );
+            o.add ( F("ST7789 240x240"));
+
+            // var opts = [[0, "None"], [1, "SSD1306 0.96\""], [2, "SH1106 1.3\""], [3, "Nokia5110"]];
+        }
+
         void getDisplay(JsonObject obj) {
             obj[F("disp_typ")]     = (uint8_t)mConfig->plugin.display.type;
             obj[F("disp_pwr")]     = (bool)mConfig->plugin.display.pwrSaveAtIvOffline;
@@ -427,6 +461,7 @@ class RestApi {
             obj[F("disp_dc")]      = (mConfig->plugin.display.type < 3)  ? DEF_PIN_OFF : mConfig->plugin.display.disp_dc;
             obj[F("disp_rst")]     = (mConfig->plugin.display.type < 3)  ? DEF_PIN_OFF : mConfig->plugin.display.disp_reset;
             obj[F("disp_bsy")]     = (mConfig->plugin.display.type < 10) ? DEF_PIN_OFF : mConfig->plugin.display.disp_busy;
+            getOptions(obj);
         }
 
         void getIndex(JsonObject obj) {
@@ -478,6 +513,8 @@ class RestApi {
                 info.add(F("MQTT publishes in a fixed interval of ") + String(mConfig->mqtt.interval) + F(" seconds"));
         }
 
+
+
         void getSetup(JsonObject obj) {
             getGeneric(obj.createNestedObject(F("generic")));
             getSysInfo(obj.createNestedObject(F("system")));
@@ -491,6 +528,9 @@ class RestApi {
             getStaticIp(obj.createNestedObject(F("static_ip")));
             getDisplay(obj.createNestedObject(F("display")));
         }
+
+
+
 
         void getNetworks(JsonObject obj) {
             mApp->getAvailNetworks(obj);
