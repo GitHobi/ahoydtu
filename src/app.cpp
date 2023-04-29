@@ -4,12 +4,13 @@
 //-----------------------------------------------------------------------------
 
 #include "app.h"
+
 #include <ArduinoJson.h>
+
 #include "utils/sun.h"
 
 //-----------------------------------------------------------------------------
 app::app() : ah::Scheduler() {}
-
 
 //-----------------------------------------------------------------------------
 void app::setup() {
@@ -34,14 +35,14 @@ void app::setup() {
 
 #if defined(AP_ONLY)
     mInnerLoopCb = std::bind(&app::loopStandard, this);
-    #else
+#else
     mInnerLoopCb = std::bind(&app::loopWifi, this);
-    #endif
+#endif
 
     mWifi.setup(mConfig, &mTimestamp, std::bind(&app::onWifi, this, std::placeholders::_1));
-    #if !defined(AP_ONLY)
+#if !defined(AP_ONLY)
     everySec(std::bind(&ahoywifi::tickWifiLoop, &mWifi), "wifiL");
-    #endif
+#endif
 
     mSys.addInverters(&mConfig->inst);
 
@@ -60,15 +61,15 @@ void app::setup() {
     if (!mSys.Radio.isChipConnected())
         DPRINTLN(DBG_WARN, F("WARNING! your NRF24 module can't be reached, check the wiring"));
 
-    // when WiFi is in client mode, then enable mqtt broker
-    #if !defined(AP_ONLY)
+// when WiFi is in client mode, then enable mqtt broker
+#if !defined(AP_ONLY)
     mMqttEnabled = (mConfig->mqtt.broker[0] > 0);
     if (mMqttEnabled) {
         mMqtt.setup(&mConfig->mqtt, mConfig->sys.deviceName, mVersion, &mSys, &mTimestamp);
         mMqtt.setSubscriptionCb(std::bind(&app::mqttSubRxCb, this, std::placeholders::_1));
         mPayload.addAlarmListener(std::bind(&PubMqttType::alarmEventListener, &mMqtt, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     }
-    #endif
+#endif
     setupLed();
 
     mWeb.setup(this, &mSys, mConfig);
@@ -83,7 +84,6 @@ void app::setup() {
     mPubSerial.setup(mConfig, &mSys, &mTimestamp);
 
     regularTickers();
-
 
     // DBGPRINTLN("--- end setup");
     // DBGPRINTLN(String(ESP.getFreeHeap()));
@@ -166,8 +166,11 @@ void app::regularTickers(void) {
     DPRINTLN(DBG_DEBUG, F("regularTickers"));
     everySec(std::bind(&WebType::tickSecond, &mWeb), "webSc");
     // Plugins
-    if (mConfig->plugin.display.type != 0)
+    Serial.println("regularTickers ------------");
+    if (mConfig->plugin.display.type != 0) {
         everySec(std::bind(&DisplayType::tickerSecond, &mDisplay), "disp");
+        everyHour(std::bind(&DisplayType::tickerMinute, &mDisplay), "dispM");
+    }
     every(std::bind(&PubSerialType::tick, &mPubSerial), mConfig->serial.interval, "uart");
 }
 
@@ -193,6 +196,8 @@ void app::tickNtpUpdate(void) {
             }
         }
 
+        tickDisplay();
+
         nxtTrig = isOK ? 43200 : 60;  // depending on NTP update success check again in 12 h or in 1 min
 
         if ((mSunrise == 0) && (mConfig->sun.lat) && (mConfig->sun.lon)) {
@@ -212,17 +217,39 @@ void app::tickNtpUpdate(void) {
     once(std::bind(&app::tickNtpUpdate, this), nxtTrig, "ntp");
 }
 
+void app::tickDisplay(void) {
+    uint32_t localTime = gTimezone.toLocal(mTimestamp);
+    auto lastMidnight = localTime - (localTime % 86400);
+    uint16_t currentHour = (localTime - lastMidnight) / 3600;
+    uint16_t currentMinute = (((localTime - lastMidnight)) - (3600 * currentHour)) / 60;
+
+    Serial.println("b = " + String(lastMidnight) + " - hour " + String(currentHour));
+    Serial.println("b = " + String(lastMidnight) + " - minute " + String(currentMinute));
+
+    auto a = lastMidnight + (60 * 60 * 1 * (currentHour) + (60 * (currentMinute + 1)) + 30);
+    Serial.println("a = " + String(localTime) + " - " + String(a));
+    uint32_t nxtTrg = gTimezone.toUTC(a);  // next midnight local time
+    onceAt(std::bind(&app::tickDisplay, this), nxtTrg, "dispm2");
+
+    DPRINTLN(DBG_DEBUG, String(__PRETTY_FUNCTION__) + String(": New ticker at ") + String(a));
+
+    if (mConfig->plugin.display.type != 0)
+    {
+        mDisplay.tickerDisplay();
+    }
+}
+
 //-----------------------------------------------------------------------------
 void app::tickCalcSunrise(void) {
-    if (mSunrise == 0)                                          // on boot/reboot calc sun values for current time
+    if (mSunrise == 0)  // on boot/reboot calc sun values for current time
         ah::calculateSunriseSunset(mTimestamp, mCalculatedTimezoneOffset, mConfig->sun.lat, mConfig->sun.lon, &mSunrise, &mSunset);
 
-    if (mTimestamp > (mSunset + mConfig->sun.offsetSec))        // current time is past communication stop, calc sun values for next day
+    if (mTimestamp > (mSunset + mConfig->sun.offsetSec))  // current time is past communication stop, calc sun values for next day
         ah::calculateSunriseSunset(mTimestamp + 86400, mCalculatedTimezoneOffset, mConfig->sun.lat, mConfig->sun.lon, &mSunrise, &mSunset);
 
     tickIVCommunication();
 
-    uint32_t nxtTrig = mSunset + mConfig->sun.offsetSec + 60;    // set next trigger to communication stop, +60 for safety that it is certain past communication stop
+    uint32_t nxtTrig = mSunset + mConfig->sun.offsetSec + 60;  // set next trigger to communication stop, +60 for safety that it is certain past communication stop
     onceAt(std::bind(&app::tickCalcSunrise, this), nxtTrig, "Sunri");
     if (mMqttEnabled)
         tickSun();
@@ -230,15 +257,15 @@ void app::tickCalcSunrise(void) {
 
 //-----------------------------------------------------------------------------
 void app::tickIVCommunication(void) {
-    mIVCommunicationOn = !mConfig->sun.disNightCom; // if sun.disNightCom is false, communication is always on
-    if (!mIVCommunicationOn) {  // inverter communication only during the day
+    mIVCommunicationOn = !mConfig->sun.disNightCom;  // if sun.disNightCom is false, communication is always on
+    if (!mIVCommunicationOn) {                       // inverter communication only during the day
         uint32_t nxtTrig;
-        if (mTimestamp < (mSunrise - mConfig->sun.offsetSec)) { // current time is before communication start, set next trigger to communication start
+        if (mTimestamp < (mSunrise - mConfig->sun.offsetSec)) {  // current time is before communication start, set next trigger to communication start
             nxtTrig = mSunrise - mConfig->sun.offsetSec;
         } else {
-            if (mTimestamp >= (mSunset + mConfig->sun.offsetSec)) { // current time is past communication stop, nothing to do. Next update will be done at midnight by tickCalcSunrise
+            if (mTimestamp >= (mSunset + mConfig->sun.offsetSec)) {  // current time is past communication stop, nothing to do. Next update will be done at midnight by tickCalcSunrise
                 nxtTrig = 0;
-            } else { // current time lies within communication start/stop time, set next trigger to communication stop
+            } else {  // current time lies within communication start/stop time, set next trigger to communication stop
                 mIVCommunicationOn = true;
                 nxtTrig = mSunset + mConfig->sun.offsetSec;
             }
@@ -367,7 +394,7 @@ void app::resetSystem(void) {
     mSendFirst = true;
 
     mSunrise = 0;
-    mSunset  = 0;
+    mSunset = 0;
 
     mMqttEnabled = false;
 

@@ -444,7 +444,9 @@ class RestApi {
 #endif
             o = inv.createNestedArray();
             o.add ( 20 );
-            o.add ( F("ST7789 240x240"));
+            char tmp[30];
+            snprintf ( tmp, sizeof(tmp), "ST7789 %ix%i", TFT_WIDTH, TFT_HEIGHT);
+            o.add ( tmp );
 
             // var opts = [[0, "None"], [1, "SSD1306 0.96\""], [2, "SH1106 1.3\""], [3, "Nokia5110"]];
         }

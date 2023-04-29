@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#ifndef USE_SPI_DISPLAY
 #pragma once
 
 #include <U8g2lib.h>
@@ -36,3 +37,4 @@ class DisplayMono {
       uint16_t mTimeout;
       char _fmtText[DISP_FMT_TEXT_LEN];
 };
+#endif

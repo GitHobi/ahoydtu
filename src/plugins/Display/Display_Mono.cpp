@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#ifndef USE_SPI_DISPLAY
+
 #include "Display_Mono.h"
 
 #ifdef ESP8266
@@ -16,7 +18,6 @@
 //#endif
 
 DisplayMono::DisplayMono() {
-#ifndef USE_SPI_DISPLAY
     mEnPowerSafe = true;
     mEnScreenSaver = true;
     mLuminance = 60;
@@ -24,13 +25,11 @@ DisplayMono::DisplayMono() {
     mTimeout = DISP_DEFAULT_TIMEOUT;  // interval at which to power save (milliseconds)
     mUtcTs = NULL;
     mType = 0;
-#endif
 }
 
 
 
 void DisplayMono::init(uint8_t type, uint8_t rotation, uint8_t cs, uint8_t dc, uint8_t reset, uint8_t clock, uint8_t data, uint32_t *utcTs, const char* version) {
-#ifndef USE_SPI_DISPLAY
     if ((0 < type) && (type < 4)) {
         u8g2_cb_t *rot = (u8g2_cb_t *)((rotation != 0x00) ? U8G2_R2 : U8G2_R0);
         mType = type;
@@ -62,27 +61,21 @@ void DisplayMono::init(uint8_t type, uint8_t rotation, uint8_t cs, uint8_t dc, u
         printText(version, 3, 46);
         mDisplay->sendBuffer();
     }
-#endif
 }
 
 void DisplayMono::config(bool enPowerSafe, bool enScreenSaver, uint8_t lum) {
-#ifndef USE_SPI_DISPLAY
     mEnPowerSafe = enPowerSafe;
     mEnScreenSaver = enScreenSaver;
     mLuminance = lum;
-#endif
 }
 
 void DisplayMono::loop(void) {
-#ifndef USE_SPI_DISPLAY
     if (mEnPowerSafe)
         if(mTimeout != 0)
            mTimeout--;
-#endif
 }
 
 void DisplayMono::disp(float totalPower, float totalYieldDay, float totalYieldTotal, uint8_t isprod) {
-#ifndef USE_SPI_DISPLAY
 
     mDisplay->clearBuffer();
 
@@ -129,7 +122,6 @@ void DisplayMono::disp(float totalPower, float totalYieldDay, float totalYieldTo
 
     _dispY = 0;
     _mExtra++;
-#endif
 }
 
 void DisplayMono::calcLineHeights() {
@@ -164,3 +156,5 @@ void DisplayMono::printText(const char* text, uint8_t line, uint8_t dispX) {
     dispX += (mEnScreenSaver) ? (_mExtra % 7) : 0;
     mDisplay->drawStr(dispX, mLineOffsets[line], text);
 }
+
+#endif

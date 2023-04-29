@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
+#ifndef USE_SPI_DISPLAY
+
 
 #if defined(ESP32)
 
@@ -50,3 +52,4 @@ class DisplayEPaper {
 };
 
 #endif // ESP32
+#endif // SPI

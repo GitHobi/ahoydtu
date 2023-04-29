@@ -234,6 +234,8 @@ class app : public IApp, public ah::Scheduler {
                 setRebootFlag();
         }
 
+        void tickDisplay(void);
+
         void tickNtpUpdate(void);
         void tickCalcSunrise(void);
         void tickIVCommunication(void);
