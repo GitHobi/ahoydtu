@@ -73,9 +73,9 @@ void DisplaySPI::config(bool enPowerSafe, bool enScreenSaver, uint8_t lum) {
 }
 
 void DisplaySPI::loop(void) {
-    DBGPRINTLN("DisplaySPI loop ----------------");
-    DBGPRINTLN("DisplaySPI config mEnPowerSafe " + String(mEnPowerSafe));
-    DBGPRINTLN("DisplaySPI config mTimeout     " + String(mTimeout));
+    //DBGPRINTLN("DisplaySPI loop ----------------");
+    //DBGPRINTLN("DisplaySPI config mEnPowerSafe " + String(mEnPowerSafe));
+    //DBGPRINTLN("DisplaySPI config mTimeout     " + String(mTimeout));
     if (mEnPowerSafe)
         if (mTimeout != 0)
             mTimeout--;
@@ -91,7 +91,7 @@ int DisplaySPI::drawStringCentered(uint16_t color, const GFXfont *font, const St
     return tft.fontHeight();
 }
 
-void DisplaySPI::disp(float totalPower, float totalYieldDay, float totalYieldTotal, uint8_t isprod) {
+void DisplaySPI::disp(float totalPower, float totalYieldDay, float totalYieldTotal, uint8_t isprod, DisplayDataSPI *data) {
 #ifndef DisplaySPI_DEBUG
     DPRINTLN(DBG_DEBUG, "DisplaySPI disp ----------------");
     DPRINTLN(DBG_DEBUG, "DisplaySPI disp totalPower      " + String(totalPower));
@@ -124,7 +124,7 @@ void DisplaySPI::disp(float totalPower, float totalYieldDay, float totalYieldTot
 
 
 
-    inverterPage.displayData (dataStorage.getData(), totalPower, totalYieldDay, totalYieldTotal);
+    inverterPage.displayData (dataStorage.getData(), totalPower, totalYieldDay, totalYieldTotal, data);
 
     if ( !isprod && mTimeout > 0  )
     {

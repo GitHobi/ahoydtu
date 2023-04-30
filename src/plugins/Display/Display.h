@@ -102,7 +102,6 @@ class Display {
             }
             // *kopied
 
-
             mSPIDisplay.tickerDisplay(totalYieldDay);
         }
     }
@@ -140,7 +139,42 @@ class Display {
         }
 
         if (20 == mCfg->type) {
-            mSPIDisplay.disp(totalPower, totalYieldDay, totalYieldTotal, isprod);
+            DisplayDataSPI *data = new DisplayDataSPI();
+
+            if (mSys->getNumInverters() > 0) {
+                Inverter<> *iv = mSys->getInverterByPos(0);
+                record_t<> *rec = iv->getRecordStruct(RealTimeRunData_Debug);
+                if (NULL == iv) {
+                    DPRINTLN(DBG_ERROR, F("Could not fetch data!"));
+                } else {
+                    data->CH0_YieldTotal = iv->getChannelFieldValue(CH1, FLD_YT, rec);
+                    data->CH0_YieldDay = iv->getChannelFieldValue(CH1, FLD_YD, rec);
+                    data->CH0_Power = iv->getChannelFieldValue(CH1, FLD_PDC, rec);
+                    data->CH0_Irradiation = iv->getChannelFieldValue(CH1, FLD_IRR, rec);
+
+                    data->CH1_YieldTotal = iv->getChannelFieldValue(CH2, FLD_YT, rec);
+                    data->CH1_YieldDay = iv->getChannelFieldValue(CH2, FLD_YD, rec);
+                    data->CH1_Power = iv->getChannelFieldValue(CH2, FLD_PDC, rec);
+                    data->CH1_Irradiation = iv->getChannelFieldValue(CH2, FLD_IRR, rec);
+
+                    data->Temperature = iv->getChannelFieldValue(CH0, FLD_T, rec);
+
+                    DPRINTLN(DBG_ERROR, F("Yeald Total CH0: " + String(data->CH0_YieldTotal)));
+                    DPRINTLN(DBG_ERROR, F("Yeald Day CH0: " + String(data->CH0_YieldDay)));
+                    DPRINTLN(DBG_ERROR, F("Power CH0: " + String(data->CH0_Power)));
+                    DPRINTLN(DBG_ERROR, F("Irridation CH0: " + String(data->CH0_Irradiation)));
+                    DPRINTLN(DBG_ERROR, F("Yeald Total CH1: " + String(data->CH1_YieldTotal)));
+                    DPRINTLN(DBG_ERROR, F("Yeald Day CH1: " + String(data->CH1_YieldDay)));
+                    DPRINTLN(DBG_ERROR, F("Power CH1: " + String(data->CH1_Power)));
+                    DPRINTLN(DBG_ERROR, F("Irridation CH1: " + String(data->CH1_Irradiation)));
+                    DPRINTLN(DBG_ERROR, F("Temperature CH0: " + String(data->Temperature)));
+                }
+            }
+
+            mSPIDisplay.disp(totalPower, totalYieldDay, totalYieldTotal, isprod, data);
+
+            delete (data);
+
         } else {
 #ifndef USE_SPI_DISPLAY
             if ((0 < mCfg->type) && (mCfg->type < 10)) {

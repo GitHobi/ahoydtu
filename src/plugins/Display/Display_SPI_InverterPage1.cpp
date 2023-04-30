@@ -1,22 +1,157 @@
 #include "Display_SPI_InverterPage1.h"
 
-void InverterPage::displayData(std::vector<float> data, float currentPower, float todayPower, float totalPower) {
+
+
+// uint16_t ThemeColor[] = {TFT_DARKGREEN, TFT_GREENYELLOW, TFT_SKYBLUE, TFT_BLUE};
+uint16_t ThemeColor[] = {TFT_BLUE, TFT_SKYBLUE, TFT_SKYBLUE, TFT_BLUE, TFT_DARKGREY, TFT_SILVER};
+#define SectionColor 0
+#define SectionValue 1
+#define BarColor1 2
+#define BarColor2 3
+#define SubSectionColor 4
+#define SubSectionValue 5
+
+void InverterPage::displayData(std::vector<float> data, float currentPower, float todayPower, float totalPower, DisplayDataSPI *inverter_data) {
     if (currentPower != oldtotalPower) {
-        meter(currentPower, 0, 0, 200, 200);
+        meter(currentPower, 0, 0, 200, 200, inverter_data);
         oldtotalPower = currentPower;
     }
 
     if (todayPower != oldtotalYieldDay) {
-        meterToday(todayPower, 201, 0, 100, 100);
+        meterToday(todayPower, 201, 0, 119, 100);
         oldtotalYieldDay = todayPower;
     }
 
     if (totalPower != oldtotalYieldTotal) {
-        meterTotal(totalPower, 201, 90, 100, 100);
+        meterTotal(totalPower, 201, 90, 119, 100);
         oldtotalYieldTotal = totalPower;
     }
 
-    meterHistory(data, 0, 175, 320, 62);
+    // meterHistory(data, 0, 175, 320, 62);
+    meterStatistics(inverter_data, 0, 175, 320, 62);
+}
+
+int InverterPage::drawData(TFT_eSprite &img, String label, String value, String unit, uint16_t posX, uint16_t posY, uint16_t width) {
+    char str[20];
+    auto px = width >> 1;
+    int tw = 0;
+    int th = 0;
+
+    img.setTextColor(ThemeColor[SubSectionValue], TFT_BLACK);
+    img.setFreeFont(&FreeSans9pt7b);
+    tw = img.textWidth(unit);
+    px = px - tw;
+    img.drawString(unit, posX + px, posY);
+
+    img.setTextColor(ThemeColor[SubSectionValue], TFT_BLACK);
+    img.setFreeFont(&FreeSansBold9pt7b);
+    tw = img.textWidth(value) + 3;
+    px = px - tw;
+    img.drawString(value, posX + px, posY);
+
+    img.setTextColor(ThemeColor[SubSectionColor], TFT_BLACK);
+    img.setFreeFont(&FreeSans9pt7b);
+    auto h = img.fontHeight();
+    img.drawString(label, posX, posY);
+
+    return h;
+}
+
+void InverterPage::meterStatistics(DisplayDataSPI *data, uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+    if (tft == nullptr)
+        return;
+
+    TFT_eSprite img = TFT_eSprite(tft);
+    img.setColorDepth(16);
+    img.createSprite(width, height);
+    img.fillSprite(TFT_BLACK);
+
+    int h = 0;
+
+    {
+        char str[20];
+        snprintf(str, sizeof(str), "%3.2f", data->CH0_Irradiation);
+        h += drawData(img, F("Exposure: "), String(str), F("%"), 0, h, width - 10);
+    }
+
+    {
+        char str[20];
+        snprintf(str, sizeof(str), "%3.0f", data->CH0_YieldDay);
+        h += drawData(img, F("Today: "), String(str), F("Wh"), 0, h, width - 10);
+    }
+
+    {
+        char str[20];
+        snprintf(str, sizeof(str), "%3.1f", data->CH0_Power);
+        h += drawData(img, F("Power: "), String(str), F("W"), 0, h, width - 10);
+    }
+
+    // ----
+
+    h = 0;
+    {
+        char str[20];
+        snprintf(str, sizeof(str), "%3.2f", data->CH1_Irradiation);
+        h += drawData(img, F("Exposure: "), String(str), F("%"), (width >> 1) + 5, h, width - 10);
+    }
+
+    {
+        char str[20];
+        snprintf(str, sizeof(str), "%3.0f", data->CH1_YieldDay);
+        h += drawData(img, F("Today: "), String(str), F("Wh"), (width >> 1) + 5, h, width - 10);
+    }
+
+    {
+        char str[20];
+        snprintf(str, sizeof(str), "%3.1f", data->CH1_Power);
+        h += drawData(img, F("Power: "), String(str), F("W"), (width >> 1) + 5, h, width - 10);
+    }
+
+    /*
+    {
+        char str[20] = "Exposure: ";
+        img.setTextColor(ThemeColor[SectionColor], TFT_BLACK);
+        img.setFreeFont(&FreeSans9pt7b);
+        auto tw = img.textWidth(str);
+        auto vh = img.fontHeight();
+        img.drawString(str, (width >> 1) + 0, 0);
+
+        img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
+        img.setFreeFont(&FreeSansBold9pt7b);
+        snprintf(str, sizeof(str), "%3.2f%%", data->CH1_Irradiation);
+        tw = img.textWidth(str);
+        auto vh2 = img.fontHeight();
+        img.drawString(str, (width >> 1) + 80, 0);
+    }
+
+    {
+        char str[20] = "Today: ";
+        img.setTextColor(ThemeColor[SectionColor], TFT_BLACK);
+        img.setFreeFont(&FreeSans9pt7b);
+        auto tw = img.textWidth(str);
+        img.drawString(str, (width >> 1) + 0, h);
+
+        img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
+        img.setFreeFont(&FreeSansBold9pt7b);
+        snprintf(str, sizeof(str), "%3.0fWh", data->CH1_YieldDay);
+        img.drawString(str, (width >> 1) + 80, h);
+    }
+
+    {
+        char str[20] = "Power: ";
+        img.setTextColor(ThemeColor[SectionColor], TFT_BLACK);
+        img.setFreeFont(&FreeSans9pt7b);
+        auto tw = img.textWidth(str);
+        img.drawString(str, (width >> 1) + 0, h << 1);
+
+        img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
+        img.setFreeFont(&FreeSansBold9pt7b);
+        snprintf(str, sizeof(str), "%3.1fW", data->CH1_Power);
+        img.drawString(str, (width >> 1) + 80, h << 1);
+    }
+    */
+
+    img.pushSprite(x, y);
 }
 
 // =========================================================================
@@ -68,13 +203,6 @@ unsigned int InverterPage::rainbow(byte value) {
     }
     return (red << 11) + (green << 5) + blue;
 }
-
-// uint16_t ThemeColor[] = {TFT_DARKGREEN, TFT_GREENYELLOW, TFT_SKYBLUE, TFT_BLUE};
-uint16_t ThemeColor[] = {TFT_BLUE, TFT_SKYBLUE, TFT_SKYBLUE, TFT_BLUE};
-#define SectionColor 0
-#define SectionValue 1
-#define BarColor1 2
-#define BarColor2 3
 
 void InverterPage::meterHistory(std::vector<float> data, uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
     if (tft == nullptr)
@@ -156,13 +284,13 @@ void InverterPage::meterTotal(float power, uint16_t x, uint16_t y, uint16_t widt
     auto vh = tft->fontHeight();
     tft->drawString(str, x + width - tw, y);
 
-    //if (power > 999) {
-    //    snprintf(str, sizeof(str), "%2.2f", (power / 1000.0));
-        snprintf(unit, sizeof(unit), "%s", "kWh");
+    // if (power > 999) {
+    //     snprintf(str, sizeof(str), "%2.2f", (power / 1000.0));
+    snprintf(unit, sizeof(unit), "%s", "kWh");
     //} else {
-        snprintf(str, sizeof(str), "%.2f", power);
+    snprintf(str, sizeof(str), "%.2f", power);
     //    snprintf(unit, sizeof(unit), "%s", "W");
-   // }
+    // }
 
     tft->setTextColor(ThemeColor[SectionValue], TFT_BLACK);
     tft->setFreeFont(&FreeSansBold12pt7b);
@@ -176,7 +304,19 @@ void InverterPage::meterTotal(float power, uint16_t x, uint16_t y, uint16_t widt
     tft->drawString(unit, x + width - tw, y + vh + vh2 + 2);
 }
 
-void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8_t height) {
+unsigned int InverterPage::adjustColor(unsigned int color) {
+    auto r = (color >> 8) & 0xF8;
+    auto g = (color >> 3) & 0xFC;
+    auto b = (color << 3) & 0xF8;
+
+    uint8_t scaled_r = (r * 255) / 248;
+    uint8_t scaled_g = (g * 255) / 252;
+    uint8_t scaled_b = (b * 255) / 248;
+
+    return tft->color565(r / 3, g / 3, b / 3);
+}
+
+void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8_t height, DisplayDataSPI *inverter_data) {
     if (tft == nullptr)
         return;
 
@@ -219,7 +359,9 @@ void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8
             uint16_t colour = rainbow(map(angle, -130, 130, 0, 127));
 
             if (angle > value)
-                colour = tft->color565(16, 16, 16);
+                // colour = tft->color565(16, 16, 16);
+                colour = adjustColor(colour);
+
             else
                 lastColor = colour;
             tft->drawWedgeLine(px1, py1, px2, py2, w1, w2, colour, TFT_BLACK);
@@ -240,16 +382,19 @@ void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8
         // ----
     }
 
-    auto mainValueColorToUse = lastColor;
+    //auto mainValueColorToUse = lastColor;
 
     char str[20];
     char unit[5];
 
     if (isprod == 0) {
-        mainValueColorToUse = TFT_RED;
+        tft->setFreeFont(&FreeSansBold18pt7b);
+        tft->setTextColor(TFT_RED);
         snprintf(str, sizeof(str), "%s", "OFFLINE");
         snprintf(unit, sizeof(unit), "%s", "");
     } else {
+        tft->setFreeFont(&FreeSansBold24pt7b);
+        tft->setTextColor(ThemeColor[SectionValue], TFT_BLACK);
         if (power > 999) {
             snprintf(str, sizeof(str), "%2.2f", (power / 1000));
             snprintf(unit, sizeof(unit), "%s", "kW");
@@ -259,18 +404,32 @@ void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8
         }
     }
 
-    tft->setFreeFont(&FreeSansBold18pt7b);
+
     auto tw = tft->textWidth(str);
     auto vh = tft->fontHeight();
     auto py = y + (height - vh) >> 1;
-    //tft->setTextColor(mainValueColorToUse);
-    tft->setTextColor(ThemeColor[SectionValue], TFT_BLACK);
-    tft->drawString(str, x + (width - tw) >> 1, py);
+    //
 
-    tft->setFreeFont(&FreeSansBold12pt7b);
+    tft->drawString(str, x + (width - tw) >> 1, py+5);
+
+    tft->setFreeFont(&FreeSans12pt7b);
     tw = tft->textWidth(unit);
-    py += tft->fontHeight() + 2;
-    tft->drawString(unit, x + (width - tw) >> 1, py);
+    py += vh;
+    tft->drawString(unit, x + (width - tw) >> 1, py-7);
+
+    if (inverter_data != nullptr) {
+        auto t = inverter_data->Temperature > 70.0f ? 70.0f : inverter_data->Temperature;
+        t = t < 0.0f ? 0.0 : t;
+        auto color = rainbow ( (t / 70.0) * 127.0 );
+        tft->setTextColor(color, TFT_BLACK);
+
+        snprintf(str, sizeof(str), "%2.1f C", inverter_data->Temperature);
+        tft->setFreeFont(&FreeSans9pt7b);
+        tw = tft->textWidth(str);
+        tft->drawString(str, x + (width - tw) >> 1, 55);
+
+        tft->drawSmoothCircle(x + ((width - tw) >> 1) + tw - tft->textWidth("C") -1, 55, 2, color, TFT_BLACK);
+    }
 
     // tft.drawSmoothCircle(cx, cy, r2+w2, TFT_RED, TFT_BLACK);
 }
