@@ -107,49 +107,7 @@ void InverterPage::meterStatistics(DisplayDataSPI *data, uint16_t x, uint16_t y,
         h += drawData(img, F("Power: "), String(str), F("W"), (width >> 1) + 5, h, width - 10);
     }
 
-    /*
-    {
-        char str[20] = "Exposure: ";
-        img.setTextColor(ThemeColor[SectionColor], TFT_BLACK);
-        img.setFreeFont(&FreeSans9pt7b);
-        auto tw = img.textWidth(str);
-        auto vh = img.fontHeight();
-        img.drawString(str, (width >> 1) + 0, 0);
 
-        img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
-        img.setFreeFont(&FreeSansBold9pt7b);
-        snprintf(str, sizeof(str), "%3.2f%%", data->CH1_Irradiation);
-        tw = img.textWidth(str);
-        auto vh2 = img.fontHeight();
-        img.drawString(str, (width >> 1) + 80, 0);
-    }
-
-    {
-        char str[20] = "Today: ";
-        img.setTextColor(ThemeColor[SectionColor], TFT_BLACK);
-        img.setFreeFont(&FreeSans9pt7b);
-        auto tw = img.textWidth(str);
-        img.drawString(str, (width >> 1) + 0, h);
-
-        img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
-        img.setFreeFont(&FreeSansBold9pt7b);
-        snprintf(str, sizeof(str), "%3.0fWh", data->CH1_YieldDay);
-        img.drawString(str, (width >> 1) + 80, h);
-    }
-
-    {
-        char str[20] = "Power: ";
-        img.setTextColor(ThemeColor[SectionColor], TFT_BLACK);
-        img.setFreeFont(&FreeSans9pt7b);
-        auto tw = img.textWidth(str);
-        img.drawString(str, (width >> 1) + 0, h << 1);
-
-        img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
-        img.setFreeFont(&FreeSansBold9pt7b);
-        snprintf(str, sizeof(str), "%3.1fW", data->CH1_Power);
-        img.drawString(str, (width >> 1) + 80, h << 1);
-    }
-    */
 
     img.pushSprite(x, y);
 }
@@ -250,39 +208,51 @@ void InverterPage::meterToday(float power, uint16_t x, uint16_t y, uint16_t widt
     if (tft == nullptr)
         return;
 
+    TFT_eSprite img = TFT_eSprite(tft);
+    img.setColorDepth(16);
+    img.createSprite(width, height);
+    img.fillSprite(TFT_BLACK);
+
     char str[20] = "TODAY";
-    tft->setTextColor(ThemeColor[SectionColor], TFT_BLACK);
-    tft->setFreeFont(&FreeSans9pt7b);
-    auto tw = tft->textWidth(str);
-    auto vh = tft->fontHeight();
-    tft->drawString(str, x + width - tw, y);
+    img.setTextColor(ThemeColor[SectionColor], TFT_BLACK);
+    img.setFreeFont(&FreeSans9pt7b);
+    auto tw = img.textWidth(str);
+    auto vh = img.fontHeight();
+    img.drawString(str, 0 + width - tw, 0);
 
-    tft->setTextColor(ThemeColor[SectionValue], TFT_BLACK);
-    tft->setFreeFont(&FreeSansBold12pt7b);
+    img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
+    img.setFreeFont(&FreeSansBold12pt7b);
     snprintf(str, sizeof(str), "%3.1f", power);
-    tw = tft->textWidth(str);
-    auto vh2 = tft->fontHeight();
-    tft->drawString(str, x + width - tw, y + vh + 2);
+    tw = img.textWidth(str);
+    auto vh2 = img.fontHeight();
+    img.drawString(str, 0 + width - tw, 0 + vh + 2);
 
-    tft->setTextColor(ThemeColor[SectionValue], TFT_BLACK);
-    tft->setFreeFont(&FreeSans9pt7b);
+    img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
+    img.setFreeFont(&FreeSans9pt7b);
     snprintf(str, sizeof(str), "%s", "Wh");
-    tw = tft->textWidth(str);
-    tft->drawString(str, x + width - tw, y + vh + vh2 + 2);
+    tw = img.textWidth(str);
+    img.drawString(str, 0 + width - tw, 0 + vh + vh2 - 5);
+
+    img.pushSprite(x, y);
 }
 
 void InverterPage::meterTotal(float power, uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
     if (tft == nullptr)
         return;
 
+    TFT_eSprite img = TFT_eSprite(tft);
+    img.setColorDepth(16);
+    img.createSprite(width, height);
+    img.fillSprite(TFT_BLACK);
+
     char str[20] = "TOTAL";
     char unit[20];
 
-    tft->setTextColor(ThemeColor[SectionColor], TFT_BLACK);
-    tft->setFreeFont(&FreeSans9pt7b);
-    auto tw = tft->textWidth(str);
-    auto vh = tft->fontHeight();
-    tft->drawString(str, x + width - tw, y);
+    img.setTextColor(ThemeColor[SectionColor], TFT_BLACK);
+    img.setFreeFont(&FreeSans9pt7b);
+    auto tw = img.textWidth(str);
+    auto vh = img.fontHeight();
+    img.drawString(str, 0 + width - tw, 0);
 
     // if (power > 999) {
     //     snprintf(str, sizeof(str), "%2.2f", (power / 1000.0));
@@ -292,16 +262,18 @@ void InverterPage::meterTotal(float power, uint16_t x, uint16_t y, uint16_t widt
     //    snprintf(unit, sizeof(unit), "%s", "W");
     // }
 
-    tft->setTextColor(ThemeColor[SectionValue], TFT_BLACK);
-    tft->setFreeFont(&FreeSansBold12pt7b);
-    tw = tft->textWidth(str);
-    auto vh2 = tft->fontHeight();
-    tft->drawString(str, x + width - tw, y + vh + 2);
+    img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
+    img.setFreeFont(&FreeSansBold12pt7b);
+    tw = img.textWidth(str);
+    auto vh2 = img.fontHeight();
+    img.drawString(str, 0 + width - tw, 0 + vh + 2);
 
-    tft->setTextColor(ThemeColor[SectionValue], TFT_BLACK);
-    tft->setFreeFont(&FreeSans9pt7b);
-    tw = tft->textWidth(unit);
-    tft->drawString(unit, x + width - tw, y + vh + vh2 + 2);
+    img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
+    img.setFreeFont(&FreeSans9pt7b);
+    tw = img.textWidth(unit);
+    img.drawString(unit, 0 + width - tw, 0 + vh + vh2 -5 ) ;
+
+    img.pushSprite(x, y);
 }
 
 unsigned int InverterPage::adjustColor(unsigned int color) {
@@ -320,7 +292,23 @@ void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8
     if (tft == nullptr)
         return;
 
-    tft->fillRect(x, y, x + width, y + width, TFT_BLACK);
+    TFT_eSprite img = TFT_eSprite(tft);
+    img.setColorDepth(16);
+    /*
+        Where do the magic numer 170 come from?
+        We are not drawing a full circle, but an arc, spanning 270°. So we do not cover the full height of the circle.
+        The circle has a radius of 100 pixel. (give by the values I used)
+        We need to calculate the position of the starting point of the arc - concret: We need the distance on the y-achsis to the center of the arc.
+        The distance = sin(-135) * 100 = ~70.
+        This this value we add the upper part of the arc (above the center), which is 100px.
+        So the absolute height will be ~170pixel.
+    */
+    img.createSprite(width, 170);
+    img.fillSprite(TFT_BLACK);
+
+
+
+    //img.fillRect(x, y, x + width, y + width, TFT_BLACK);
 
     auto isprod = power > 0;
     auto lastColor = TFT_BLACK;
@@ -334,8 +322,8 @@ void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8
         // Centre of screen
         // int cx = tft.width()  / 2;
         // int cy = tft.height() / 2;
-        int cx = x + width >> 1;
-        int cy = y + height >> 1;
+        int cx = 0 + width >> 1;
+        int cy = 0 + height >> 1;
 
         // Inner and outer radius of ring
         float r1 = min(cx, cy) - 40.0;
@@ -364,11 +352,11 @@ void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8
 
             else
                 lastColor = colour;
-            tft->drawWedgeLine(px1, py1, px2, py2, w1, w2, colour, TFT_BLACK);
+            img.drawWedgeLine(px1, py1, px2, py2, w1, w2, colour, TFT_BLACK);
         }
 
         // Smooth dark red filled circle
-        tft->fillSmoothCircle(cx, cy, r1 - 8, TFT_BLACK, TFT_BLACK);
+        img.fillSmoothCircle(cx, cy, r1 - 8, TFT_BLACK, TFT_BLACK);
 
         // getCoord(cx, cy, &px1, &py1, &px2, &py2, 0, r1 - 10, oldValue);
         // tft.drawWedgeLine(cx, cy, px2, py2, 10, 0, TFT_BLACK, TFT_BLACK);
@@ -388,13 +376,13 @@ void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8
     char unit[5];
 
     if (isprod == 0) {
-        tft->setFreeFont(&FreeSansBold18pt7b);
-        tft->setTextColor(TFT_RED);
+        img.setFreeFont(&FreeSansBold18pt7b);
+        img.setTextColor(TFT_RED);
         snprintf(str, sizeof(str), "%s", "OFFLINE");
         snprintf(unit, sizeof(unit), "%s", "");
     } else {
-        tft->setFreeFont(&FreeSansBold24pt7b);
-        tft->setTextColor(ThemeColor[SectionValue], TFT_BLACK);
+        img.setFreeFont(&FreeSansBold24pt7b);
+        img.setTextColor(ThemeColor[SectionValue], TFT_BLACK);
         if (power > 999) {
             snprintf(str, sizeof(str), "%2.2f", (power / 1000));
             snprintf(unit, sizeof(unit), "%s", "kW");
@@ -405,31 +393,34 @@ void InverterPage::meter(float power, uint8_t x, uint8_t y, uint8_t width, uint8
     }
 
 
-    auto tw = tft->textWidth(str);
-    auto vh = tft->fontHeight();
+    auto tw = img.textWidth(str);
+    auto vh = img.fontHeight();
     auto py = y + (height - vh) >> 1;
     //
 
-    tft->drawString(str, x + (width - tw) >> 1, py+5);
+    img.drawString(str, x + (width - tw) >> 1, py+5);
 
-    tft->setFreeFont(&FreeSans12pt7b);
-    tw = tft->textWidth(unit);
+    img.setFreeFont(&FreeSans12pt7b);
+    tw = img.textWidth(unit);
     py += vh;
-    tft->drawString(unit, x + (width - tw) >> 1, py-7);
+    img.drawString(unit, x + (width - tw) >> 1, py-7);
 
     if (inverter_data != nullptr) {
         auto t = inverter_data->Temperature > 70.0f ? 70.0f : inverter_data->Temperature;
+        t -= 20.0f;
         t = t < 0.0f ? 0.0 : t;
-        auto color = rainbow ( (t / 70.0) * 127.0 );
-        tft->setTextColor(color, TFT_BLACK);
+        auto color = rainbow ( (t / 50.0) * 127.0 ); // we show temperature in range of 20-70
+        img.setTextColor(color, TFT_BLACK);
 
         snprintf(str, sizeof(str), "%2.1f C", inverter_data->Temperature);
-        tft->setFreeFont(&FreeSans9pt7b);
-        tw = tft->textWidth(str);
-        tft->drawString(str, x + (width - tw) >> 1, 55);
+        img.setFreeFont(&FreeSans9pt7b);
+        tw = img.textWidth(str);
+        img.drawString(str, x + (width - tw) >> 1, 55);
 
-        tft->drawSmoothCircle(x + ((width - tw) >> 1) + tw - tft->textWidth("C") -1, 55, 2, color, TFT_BLACK);
+        img.drawSmoothCircle(x + ((width - tw) >> 1) + tw - img.textWidth("C") -1, 55, 2, color, TFT_BLACK);
     }
 
     // tft.drawSmoothCircle(cx, cy, r2+w2, TFT_RED, TFT_BLACK);
+
+    img.pushSprite(x, y);
 }
