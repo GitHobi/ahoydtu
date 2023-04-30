@@ -4,8 +4,8 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 
-#include "../../utils/dbg.h"
-#include "../../utils/helper.h"
+#include "../../../utils/dbg.h"
+#include "../../../utils/helper.h"
 
 #include "Display_SPI_Data.h"
 #include "Display_SPI_DataStorage.h"

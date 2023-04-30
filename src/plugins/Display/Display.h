@@ -8,7 +8,7 @@
 #include "Display_Mono.h"
 #include "Display_ePaper.h"
 #else
-#include "Display_SPI.h"
+#include "Display_SPI/Display_SPI.h"
 #endif
 
 #include "../../hm/hmSystem.h"
